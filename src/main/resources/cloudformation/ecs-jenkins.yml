@@ -1,0 +1,507 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  AWS CloudFormation Sample Template Create a load balanced Jenkins CI server
+  with Docker installed. The application is using CloudWatch logs **WARNING**
+  This template creates an Amazon EC2 instance in an Autoscaling group. You will
+  be billed for the AWS resources used if you create a stack from this template.
+Parameters:
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t1.micro
+    AllowedValues:
+      - t1.micro
+      - t2.micro
+    ConstraintDescription: must be a valid EC2 instance type.
+  EcsStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the ecs resources,
+      such as the subnet and security group, that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: EcsClusterStack
+  SSHLocation:
+    Description: The IP address range that can be used to SSH to the EC2 instances
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+Mappings:
+  AWSInstanceType2Arch:
+    t1.micro:
+      Arch: PV64
+    t2.micro:
+      Arch: HVM64
+  AWSRegionArch2AMI:
+    ap-southeast-1:
+      PV64: ami-3f3d6a5c
+      HVM64: ami-c63d6aa5
+    ap-southeast-2:
+      PV64: ami-3249a250
+      HVM64: ami-ff4ea59d
+
+Resources:
+  CloudFormationLogs:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays: 7
+  JenkinsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonECS_FullAccess'
+        - 'arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess'
+      Path: /
+      Policies:
+        - PolicyName: JenkinsRolePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:*'
+                Resource:
+                  - 'arn:aws:logs:*:*:*'
+              - Effect: Allow
+                Action: 'ecs:*'
+                Resource: '*'
+  JenkinsInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles:
+        - !Ref JenkinsRole
+  WebServerGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      AvailabilityZones:
+        - !ImportValue
+          'Fn::Sub': '${EcsStackName}-AZ1'
+        - !ImportValue
+          'Fn::Sub': '${EcsStackName}-AZ2'
+      VPCZoneIdentifier:
+        - !ImportValue
+          'Fn::Sub': '${EcsStackName}-SubnetA'
+        - !ImportValue
+          'Fn::Sub': '${EcsStackName}-SubnetB'
+      LaunchConfigurationName: !Ref LaunchConfig
+      MinSize: '1'
+      MaxSize: '1'
+  LaunchConfig:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Metadata:
+      Comment: Install a simple application
+      'AWS::CloudFormation::Init':
+        configSets:
+          install_all:
+            - install_cfn
+            - install_base
+            - install_nginx
+            - install_logs
+        install_cfn:
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Join
+                - ''
+                - - |
+                    [main]
+                  - stack=
+                  - !Ref 'AWS::StackId'
+                  - |+
+
+                  - region=
+                  - !Ref 'AWS::Region'
+                  - |+
+
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Join
+                - ''
+                - - |
+                    [cfn-auto-reloader-hook]
+                  - |
+                    triggers=post.update
+                  - >
+                    path=Resources.WebServerInstance.Metadata.AWS::CloudFormation::Init
+                  - 'action=/opt/aws/bin/cfn-init -v '
+                  - '         --stack '
+                  - !Ref 'AWS::StackName'
+                  - '         --resource WebServerInstance '
+                  - '         --configsets install_all '
+                  - '         --region '
+                  - !Ref 'AWS::Region'
+                  - |+
+
+                  - |
+                    runas=root
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: 'true'
+                ensureRunning: 'true'
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+        install_base:
+          packages:
+            yum:
+              git: []
+              docker: []
+              httpd-tools: []
+              jq: []
+              java-1.8.0-openjdk.x86_64: []
+          services:
+            sysvinit:
+              docker:
+                enabled: 'true'
+                ensureRunning: 'true'
+        install_nginx:
+          packages:
+            yum:
+              nginx: []
+          files:
+            /etc/nginx/nginx.conf:
+              content: !Join
+                - ''
+                - - |
+                    user  nginx;
+                  - |+
+                    worker_processes  1;
+
+                  - |
+                    error_log  /var/log/nginx/error.log;
+                  - |+
+                    pid        /var/run/nginx.pid;
+
+                  - |
+                    events {
+                  - |2
+                        worker_connections  1024;
+                  - |+
+                    }
+
+                  - |
+                    http {
+                  - |2
+                        include       /etc/nginx/mime.types;
+                  - |2
+                        default_type  application/octet-stream;
+                  - |2
+                        log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                  - |2
+                                          '$status $body_bytes_sent "$http_referer" '
+                  - |2+
+                                          '"$http_user_agent" "$http_x_forwarded_for"';
+
+                  - |2
+                        access_log  /var/log/nginx/access.log  main;
+                  - |2
+                        sendfile        on;
+                  - |2
+                        keepalive_timeout  65;
+                  - |2
+                        include /etc/nginx/conf.d/*.conf;
+                  - |2
+                        index   index.html index.htm;
+                  - |2
+                        server {
+                  - |2
+                            listen       80;
+                  - |2
+                            server_name  _;
+                  - |2
+                            location / {
+                  - |2
+                              proxy_pass              http://127.0.0.1:8080;
+                  - |2
+                              proxy_set_header        Host $host;
+                  - |2
+                              proxy_set_header        X-Real-IP $remote_addr;
+                  - |2
+                              proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                  - |2
+                              proxy_connect_timeout   150;
+                  - |2
+                              proxy_send_timeout      100;
+                  - |2
+                              proxy_read_timeout      100;
+                  - |2
+                              proxy_buffers           4 32k;
+                  - |2
+                              client_max_body_size    8m;
+                  - |2
+                              client_body_buffer_size 128k;
+                  - |2
+                            }
+                  - |2
+                       }
+                  - |
+                    }
+              mode: '000444'
+              owner: root
+              group: root
+          services:
+            sysvinit:
+              nginx:
+                enabled: 'true'
+                ensureRunning: 'true'
+                files:
+                  - /etc/nginx/nginx.conf
+        install_logs:
+          packages:
+            yum:
+              awslogs: []
+          files:
+            /etc/awslogs/awslogs.conf:
+              content: !Join
+                - ''
+                - - |
+                    [general]
+                  - |
+                    state_file= /var/awslogs/state/agent-state
+                  - |
+                    [/var/log/cloud-init.log]
+                  - |
+                    file = /var/log/cloud-init.log
+                  - 'log_group_name = '
+                  - !Ref CloudFormationLogs
+                  - |+
+
+                  - |
+                    log_stream_name = {instance_id}/cloud-init.log
+                  - |
+                    datetime_format =
+                  - |
+                    [/var/log/cloud-init-output.log]
+                  - |
+                    file = /var/log/cloud-init-output.log
+                  - 'log_group_name = '
+                  - !Ref CloudFormationLogs
+                  - |+
+
+                  - |
+                    log_stream_name = {instance_id}/cloud-init-output.log
+                  - |
+                    datetime_format =
+                  - |
+                    [/var/log/cfn-init.log]
+                  - |
+                    file = /var/log/cfn-init.log
+                  - 'log_group_name = '
+                  - !Ref CloudFormationLogs
+                  - |+
+
+                  - |
+                    log_stream_name = {instance_id}/cfn-init.log
+                  - |
+                    datetime_format =
+                  - |
+                    [/var/log/cfn-hup.log]
+                  - |
+                    file = /var/log/cfn-hup.log
+                  - 'log_group_name = '
+                  - !Ref CloudFormationLogs
+                  - |+
+
+                  - |
+                    log_stream_name = {instance_id}/cfn-hup.log
+                  - |
+                    datetime_format =
+                  - |
+                    [/var/log/cfn-wire.log]
+                  - |
+                    file = /var/log/cfn-wire.log
+                  - 'log_group_name = '
+                  - !Ref CloudFormationLogs
+                  - |+
+
+                  - |
+                    log_stream_name = {instance_id}/cfn-wire.log
+                  - |
+                    datetime_format =
+                  - |
+                    [/var/log/nginx/access.log]
+                  - |
+                    file = /var/log/nginx/access.log
+                  - 'log_group_name = '
+                  - !Ref CloudFormationLogs
+                  - |+
+
+                  - |
+                    log_stream_name = {instance_id}/nginx-access.log
+                  - |
+                    datetime_format =
+                  - |
+                    [/var/log/nginx/error.log]
+                  - |
+                    file = /var/log/nginx/error.log
+                  - 'log_group_name = '
+                  - !Ref CloudFormationLogs
+                  - |+
+
+                  - |
+                    log_stream_name = {instance_id}/nginx-error.log
+                  - |
+                    datetime_format =
+                  - |
+                    [/var/log/jenkins/jenkins.log]
+                  - |
+                    file = /var/log/jenkins/jenkins.log
+                  - 'log_group_name = '
+                  - !Ref CloudFormationLogs
+                  - |+
+
+                  - |
+                    log_stream_name = {instance_id}/jenkins.log
+                  - |
+                    datetime_format =
+              mode: '000444'
+              owner: root
+              group: root
+          commands:
+            01_create_state_directory:
+              command: mkdir -p /var/awslogs/state
+            02_change_log_region:
+              command: !Join
+                - ''
+                - - 'sed -i ''s/region = us-east-1/region = '
+                  - !Ref 'AWS::Region'
+                  - /g' /etc/awslogs/awscli.conf
+          services:
+            sysvinit:
+              awslogs:
+                enabled: 'true'
+                ensureRunning: 'true'
+                files:
+                  - /etc/awslogs/awslogs.conf
+    Properties:
+      KeyName: !ImportValue
+        'Fn::Sub': '${EcsStackName}-KeyName'
+      ImageId: !FindInMap
+        - AWSRegionArch2AMI
+        - !Ref 'AWS::Region'
+        - !FindInMap
+          - AWSInstanceType2Arch
+          - !Ref InstanceType
+          - Arch
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: '50'
+            VolumeType: gp2
+      SecurityGroups:
+        - !Ref InstanceSecurityGroup
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref JenkinsInstanceProfile
+      UserData: !Base64
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -xe
+            - |
+              yum update -y aws-cfn-bootstrap
+            - '/opt/aws/bin/cfn-init -v '
+            - ' --stack '
+            - !Ref 'AWS::StackName'
+            - ' --resource LaunchConfig '
+            - ' --configsets install_all '
+            - ' --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+            - |
+              yum remove -y java-1.7.0
+            - |
+              # Install Jenkins
+            - >
+              wget -O /etc/yum.repos.d/jenkins.repo
+              http://pkg.jenkins-ci.org/redhat/jenkins.repo
+            - |
+              rpm --import http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key
+            - |
+              yum install -y jenkins
+            - |
+              # Add Jenkins user to Docker group
+            - |
+              usermod -a -G docker jenkins
+            - |
+              service jenkins start
+            - |
+              chkconfig jenkins on
+            - |
+              # Update the AWS CLI to the latest version
+            - |
+              yum update -y aws-cli
+            - |
+              # Wait 30 seconds to allow Jenkins to startup
+            - |
+              echo "Waiting 30 seconds for Jenkins to start....."
+            - |
+              sleep 30
+            - |
+              # Install the required plugins
+            - |
+              cd /var/lib/jenkins/plugins
+            - |
+              curl -O -L https://updates.jenkins-ci.org/latest/token-macro.hpi
+            - >
+              curl -O -L
+              https://updates.jenkins-ci.org/latest/docker-build-publish.hpi
+            - |
+              curl -O -L https://updates.jenkins-ci.org/latest/multiple-scms.hpi
+            - |
+              curl -O -L https://updates.jenkins-ci.org/latest/github-api.hpi
+            - |
+              curl -O -L https://updates.jenkins-ci.org/latest/scm-api.hpi
+            - |
+              curl -O -L https://updates.jenkins-ci.org/latest/git-client.hpi
+            - |
+              curl -O -L https://updates.jenkins-ci.org/latest/github.hpi
+            - |
+              curl -O -L https://updates.jenkins-ci.org/latest/git.hpi
+            - |
+              curl -O -L https://updates.jenkins-ci.org/latest/dockerhub.hpi
+            - |
+              chown jenkins:jenkins *.hpi
+            - |
+              # Restarting Jenkins
+            - |
+              service jenkins restart
+            - '/opt/aws/bin/cfn-signal -e $? '
+            - ' --stack '
+            - !Ref 'AWS::StackName'
+            - ' --resource WebServerGroup '
+            - ' --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+  InstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable SSH access and HTTP from anywhere
+      VpcId: !ImportValue
+        'Fn::Sub': '${EcsStackName}-VPCID'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref SSHLocation
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
