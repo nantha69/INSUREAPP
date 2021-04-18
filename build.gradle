@@ -12,6 +12,16 @@ repositories {
     mavenCentral()
 }
 
+
+jar {
+  enabled = true
+}
+
+bootJar {
+  mainClass = 'com.symbizsolutions.demo.InsuranceApp'
+  classifier = 'boot'
+}
+
 dependencies {
   compile 'com.google.guava:guava:28.1-jre'
   compileOnly 'org.projectlombok:lombok:1.18.10'

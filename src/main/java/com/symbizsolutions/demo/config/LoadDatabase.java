@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Log4j2
-@Configuration
+//@Configuration
 public class LoadDatabase {
     @Bean
     CommandLineRunner initDatabase(CustomerRepository repository) {

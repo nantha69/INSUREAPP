@@ -1,0 +1,10 @@
+version: '1'
+services:
+  insuranceapp-server:
+    container_name: insuranceapp-server
+    build:
+      context: docker-insuranceapp-server
+      dockerfile: Dockerfile
+    image: insuranceapp-server:latest
+    ports:
+      - 8080:8080
