@@ -1,4 +1,4 @@
-package com.symbizsolutions.demo;
+package com.symbizsolutions.demo.controller;
 
 import java.util.List;
 
@@ -24,18 +24,18 @@ public class CustomerController {
         return repository.findAll();
     }
 
-    @PostMapping("/customers")
+    @PostMapping("/customer")
     Customer save(@RequestBody Customer newCustomer) {
         return repository.save(newCustomer);
     }
 
-    @GetMapping("/customers/{id}")
+    @GetMapping("/customer/{id}")
     Customer find(@PathVariable Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
     }
 
-    @PutMapping("/customers/{id}")
+    @PutMapping("/customer/{id}")
     Customer replaceCustomer(@RequestBody Customer newCustomer, @PathVariable Long id) {
 
         return repository.findById(id)
@@ -51,7 +51,7 @@ public class CustomerController {
                 });
     }
 
-    @DeleteMapping("/customers/{id}")
+    @DeleteMapping("/customer/{id}")
     void deleteCustomer(@PathVariable Long id) {
         repository.deleteById(id);
     }

@@ -16,7 +16,8 @@ import lombok.NoArgsConstructor;
 public class Customer {
     public enum Gender {
         Male,
-        Female
+        Female,
+        Other
     }
     private @Id @GeneratedValue Long id;
     private String name;

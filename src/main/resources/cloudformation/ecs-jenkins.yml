@@ -12,6 +12,7 @@ Parameters:
     AllowedValues:
       - t1.micro
       - t2.micro
+      - t3.micro
     ConstraintDescription: must be a valid EC2 instance type.
   EcsStackName:
     Description: >-
@@ -35,6 +36,8 @@ Mappings:
     t1.micro:
       Arch: PV64
     t2.micro:
+      Arch: HVM64
+    t3.micro:
       Arch: HVM64
   AWSRegionArch2AMI:
     ap-southeast-1:

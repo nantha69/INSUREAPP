@@ -1,4 +1,4 @@
-package com.symbizsolutions.demo;
+package com.symbizsolutions.demo.controller;
 
 import static com.symbizsolutions.demo.entity.Customer.Gender.Female;
 import static com.symbizsolutions.demo.entity.Customer.Gender.Male;
@@ -37,30 +37,18 @@ class CustomerControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        customer1 = new Customer(
-                1L,
-                "Bilbo Baggins",
-                LocalDate.of(1983, 10, 20),
-                Male
-        );
-        customer2 = new Customer(
-                2L,
-                "Mary Baggins",
-                LocalDate.of(1983, 12, 1),
-                Female
-        );
+        customer1 = new Customer(1L, "Bilbo Baggins", LocalDate.of(1983, 10, 20), Male);
+        customer2 = new Customer(2L,"Mary Baggins",LocalDate.of(1983, 12, 1), Female);
     }
 
     @Test
     @Order(1)
     void testSaveCustomer() {
-        assertThat(this.restTemplate.postForObject("http://localhost:" + port + "/customers",
-                                                   new Customer("Bilbo Baggins", LocalDate.of(1983, 10, 20),
-                                                                Male),Customer.class))
+        assertThat(this.restTemplate.postForObject("http://localhost:" + port + "/customer",
+                                                   customer1,Customer.class))
                    .isEqualTo(customer1);
-        assertThat(this.restTemplate.postForObject("http://localhost:" + port + "/customers",
-                                                   new Customer( "Mary Baggins", LocalDate.of(1983,12,1),
-                                                                Female),Customer.class))
+        assertThat(this.restTemplate.postForObject("http://localhost:" + port + "/customer",
+                                                   customer2,Customer.class))
                 .isEqualTo(customer2);
     }
 
@@ -79,17 +67,17 @@ class CustomerControllerIntegrationTest {
     @Test
     @Order(3)
     void testCustomerWithId() {
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/customers/1",
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/customer/1",
                                                   Customer.class)).isEqualTo(customer1);
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/customers/2",
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/customer/2",
                                                   Customer.class)).isEqualTo(customer2);
     }
 
     @Test
     @Order(4)
     void testDeleteCustomerWithId() {
-       this.restTemplate.delete("http://localhost:" + port + "/customers/1");
-       this.restTemplate.delete("http://localhost:" + port + "/customers/2");
+       this.restTemplate.delete("http://localhost:" + port + "/customer/1");
+       this.restTemplate.delete("http://localhost:" + port + "/customer/2");
        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/customers",
                                                   Customer[].class)).isEqualTo(new Customer[]{});
     }
