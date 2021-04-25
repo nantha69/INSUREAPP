@@ -24,25 +24,27 @@ public class CustomerController {
         return repository.findAll();
     }
 
-    @PostMapping("/customer")
+    @PostMapping(
+            value = "/customer", consumes = "application/json", produces = "application/json")
     Customer save(@RequestBody Customer newCustomer) {
         return repository.save(newCustomer);
     }
 
     @GetMapping("/customer/{id}")
-    Customer find(@PathVariable Long id) {
+    Customer find(@PathVariable String id) {
         return repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
     }
 
     @PutMapping("/customer/{id}")
-    Customer replaceCustomer(@RequestBody Customer newCustomer, @PathVariable Long id) {
+    Customer replaceCustomer(@RequestBody Customer newCustomer, @PathVariable String id) {
 
         return repository.findById(id)
                 .map(customer -> {
                     customer.setName(newCustomer.getName());
                     customer.setDob(newCustomer.getDob());
                     customer.setGender(newCustomer.getGender());
+                    customer.setCountryCode(newCustomer.getCountryCode());
                     return repository.save(customer);
                 })
                 .orElseGet(() -> {
@@ -52,7 +54,7 @@ public class CustomerController {
     }
 
     @DeleteMapping("/customer/{id}")
-    void deleteCustomer(@PathVariable Long id) {
+    void deleteCustomer(@PathVariable String id) {
         repository.deleteById(id);
     }
 }

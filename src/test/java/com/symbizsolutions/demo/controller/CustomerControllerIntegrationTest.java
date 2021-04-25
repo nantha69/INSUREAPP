@@ -1,7 +1,9 @@
 package com.symbizsolutions.demo.controller;
 
-import static com.symbizsolutions.demo.entity.Customer.Gender.Female;
-import static com.symbizsolutions.demo.entity.Customer.Gender.Male;
+import static com.symbizsolutions.demo.entity.CountryCode.UK;
+import static com.symbizsolutions.demo.entity.CountryCode.US;
+import static com.symbizsolutions.demo.entity.Gender.Female;
+import static com.symbizsolutions.demo.entity.Gender.Male;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
@@ -19,6 +21,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -29,6 +34,7 @@ class CustomerControllerIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
+    private HttpHeaders headers;
     @Autowired
     private CustomerRepository repository;
 
@@ -37,15 +43,19 @@ class CustomerControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        customer1 = new Customer(1L, "Bilbo Baggins", LocalDate.of(1983, 10, 20), Male);
-        customer2 = new Customer(2L,"Mary Baggins",LocalDate.of(1983, 12, 1), Female);
+        headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        customer1 = new Customer("1", "Bilbo Baggins", LocalDate.of(1983, 10, 20), Male, US);
+        customer2 = new Customer("2","Mary Baggins",LocalDate.of(1983, 12, 1), Female, UK);
     }
 
     @Test
     @Order(1)
     void testSaveCustomer() {
+        HttpEntity<String> request =
+                new HttpEntity<>(customer1.toString(), headers);
         assertThat(this.restTemplate.postForObject("http://localhost:" + port + "/customer",
-                                                   customer1,Customer.class))
+                                                  customer1 ,Customer.class))
                    .isEqualTo(customer1);
         assertThat(this.restTemplate.postForObject("http://localhost:" + port + "/customer",
                                                    customer2,Customer.class))

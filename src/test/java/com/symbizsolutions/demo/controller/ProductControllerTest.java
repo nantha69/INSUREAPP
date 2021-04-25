@@ -1,24 +1,26 @@
 package com.symbizsolutions.demo.controller;
 
-import com.symbizsolutions.demo.entity.Customer;
-import com.symbizsolutions.demo.entity.Product;
-import com.symbizsolutions.demo.exception.ResourceNotFoundException;
-import com.symbizsolutions.demo.repository.CustomerRepository;
-import com.symbizsolutions.demo.repository.ProductRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Optional;
-
-import static com.symbizsolutions.demo.entity.Product.CountryCode.US;
+import static com.symbizsolutions.demo.entity.CountryCode.SG;
+import static com.symbizsolutions.demo.entity.CountryCode.US;
+import static com.symbizsolutions.demo.entity.InsuranceProvider.AIA;
+import static com.symbizsolutions.demo.entity.InsuranceProvider.AVIVA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.symbizsolutions.demo.entity.Product;
+import com.symbizsolutions.demo.exception.ResourceNotFoundException;
+import com.symbizsolutions.demo.repository.ProductRepository;
+
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 class ProductControllerTest {
 
@@ -30,14 +32,14 @@ class ProductControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         controller = new ProductController(repository);
-        product = new Product(1L, "AIA", "Health Sheild Plan", "5.00", Product.CountryCode.SG);
+        product = new Product("1", AIA, "Health Sheild Plan", "5.00", SG);
     }
 
     @Test
     void listShouldFindAllFromRepo() {
         final ArrayList<Product> products = new ArrayList<>();
         when(repository.findAll()).thenReturn(products);
-        assertThat(controller.list()).isEqualTo(products);
+        assertThat(controller.list(null)).isEqualTo(products);
     }
 
     @Test
@@ -48,35 +50,35 @@ class ProductControllerTest {
 
     @Test
     void findProductByIdShouldReturnProductIfExists() {
-        when(repository.findById(1L)).thenReturn(Optional.of(product));
-        assertThat(controller.find(1L)).isEqualTo(product);
+        when(repository.findById("1")).thenReturn(Optional.of(product));
+        assertThat(controller.find("1")).isEqualTo(product);
     }
 
     @Test
     void findProductByIdShouldThrowExceptionIfProductDoesNotExist() {
-        assertThrows(ResourceNotFoundException.class, ()-> controller.find(1L));
+        assertThrows(ResourceNotFoundException.class, ()-> controller.find("1"));
     }
 
     @Test
     void replaceShouldUpdateExistingProduct() {
-        Product newProduct = new Product(1L,"Aviva", "Aviva Premium Plan", "8.00",US);
-        when(repository.findById(1L)).thenReturn(Optional.of(product));
+        Product newProduct = new Product("1", AVIVA, "Aviva Premium Plan", "8.00", US);
+        when(repository.findById("1")).thenReturn(Optional.of(product));
         when(repository.save(newProduct)).thenReturn(newProduct);
-        final Product actual = controller.replaceProduct(newProduct, 1L);
+        final Product actual = controller.replaceProduct(newProduct, "1");
         assertThat(actual).isEqualTo(newProduct);
     }
 
     @Test
     void replaceShouldCreateNewProductIfNotExist() {
-        Product newProduct = new Product(1L,"Aviva", "Aviva Premium Plan", "8.00",US);
+        Product newProduct = new Product("1", AVIVA, "Aviva Premium Plan", "8.00", US);
         when(repository.save(newProduct)).thenReturn(newProduct);
-        final Product actual = controller.replaceProduct(newProduct, 1L);
+        final Product actual = controller.replaceProduct(newProduct, "1");
         assertThat(actual).isEqualTo(newProduct);
     }
 
     @Test
     void deleteProductShouldDeleteFromRepo() {
-        controller.deleteProduct(1L);
-        verify(repository).deleteById(1L);
+        controller.deleteProduct("1");
+        verify(repository).deleteById("1");
     }
 }

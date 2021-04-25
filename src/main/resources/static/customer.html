@@ -1,0 +1,58 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <title>Update Csutomer Details</title>
+  <script type="module" src="customer.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+  <form name="main">
+    <ul class="form-style-1">
+      <li><label>Id <span class="required">*</span></label>
+        <input type="text" name="id" class="field-divided" placeholder="Id" required/>
+      </li>
+      <li><label>Name <span class="required">*</span></label>
+        <input type="text" name="name" class="field-long" placeholder="Name" required/>
+      </li>
+      <li>
+        <label>Date of birth <span class="required">*</span></label>
+        <input type="date" name="dob" class="field-divided" required/>
+      </li>
+      <li>
+        <label>Gender</label>
+        <select name="gender" class="field-select">
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </li>
+      <li>
+        <label>Country</label>
+        <select name="countryCode" class="field-select">
+          <option value="SG">Singapore</option>
+          <option value="US">USA</option>
+          <option value="UK">UK</option>
+        </select>
+      </li>
+      <li>
+        <input type="submit" value="Submit"/>
+        <input name="load" type="button" value="Load"/>
+        <input name="reset1" type="reset" value="Reset"/>
+      </li>
+      <li>
+        <input type="text" name="message" class="field-label" placeholder="Message" readonly/>
+      </li>
+    </ul>
+  </form>
+  <div class='table-container'>
+    <label>Subscribed Products:</label>
+    <div id='subscriptionTable'></div>
+    <label>Recommended Products:</label>
+    <div id='productsTable'></div>
+  </div>
+</div>
+</body>
+</html>
+
