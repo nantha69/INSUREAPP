@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class InsuranceApp {
     public static void main(String... args) {
         SpringApplication.run(InsuranceApp.class, args);
-        log.info("app working");
+        log.info("app not working agin");
 
     }
 }
