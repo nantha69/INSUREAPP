@@ -52,8 +52,6 @@ class CustomerControllerIntegrationTest {
     @Test
     @Order(1)
     void testSaveCustomer() {
-        HttpEntity<String> request =
-                new HttpEntity<>(customer1.toString(), headers);
         assertThat(this.restTemplate.postForObject("http://localhost:" + port + "/customer",
                                                   customer1 ,Customer.class))
                    .isEqualTo(customer1);

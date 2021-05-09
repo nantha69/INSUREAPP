@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Data
 @NoArgsConstructor
-
+@AllArgsConstructor
 public class Product {
     private @Id String id;
     private InsuranceProvider provider;

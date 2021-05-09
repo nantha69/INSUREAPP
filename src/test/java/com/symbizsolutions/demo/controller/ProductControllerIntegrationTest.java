@@ -48,7 +48,7 @@ class ProductControllerIntegrationTest {
     @Order(0)
     void testAllProducts() {
         assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/products",
-                                                  Product[].class)).isEqualTo(LoadDatabase.DEFAULT_PRODUCTS);
+                                                  Product[].class)).isEqualTo(LoadDatabase.defaultProducts());
     }
 
     @Test
@@ -85,7 +85,7 @@ class ProductControllerIntegrationTest {
        this.restTemplate.delete("http://localhost:" + port + "/product/1");
        this.restTemplate.delete("http://localhost:" + port + "/product/2");
        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/products",
-                                                  Product[].class)).isEqualTo(LoadDatabase.DEFAULT_PRODUCTS);
+                                                  Product[].class)).isEqualTo(LoadDatabase.defaultProducts());
     }
 
 }

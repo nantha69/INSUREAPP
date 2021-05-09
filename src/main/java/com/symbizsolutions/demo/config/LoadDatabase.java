@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
 @Log4j2
 @Configuration
 public class LoadDatabase {
-    public static Product[] DEFAULT_PRODUCTS = {
+    final static Product[] DEFAULT_PRODUCTS = {
             new Product("AIASGSTD", AIA, "AIA Life Standard Plan", "3.20", CountryCode.SG),
             new Product("AIAUSSTD",AIA,"AIA Life Standard Plan","2.20",CountryCode.US),
             new Product("AIAUKSTD",AIA,"AIA Life Standard Plan","1.20",CountryCode.UK),
@@ -39,8 +39,13 @@ public class LoadDatabase {
             new Product("GEHKSTD",GreatEastern,"Great Eastern Savings Plan","3.21",CountryCode.HK)
 
     };
+
+    public static Product[] defaultProducts() {
+        return Arrays.copyOf(DEFAULT_PRODUCTS,DEFAULT_PRODUCTS.length);
+    }
     @Bean
     CommandLineRunner initDatabase(ProductRepository repository) {
         return args -> Arrays.stream(DEFAULT_PRODUCTS).forEach(p->log.info("Preloading " + repository.save(p)));
     }
+
 }

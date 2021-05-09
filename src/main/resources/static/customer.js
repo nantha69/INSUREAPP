@@ -38,7 +38,4 @@ const handleCountryChange = async (e) => {
         }
     }
 };
-
-form.elements['load'].addEventListener('click',handleLoad)
-form.addEventListener('submit', handleSubmit);
 form.elements['countryCode'].addEventListener('change',handleCountryChange)

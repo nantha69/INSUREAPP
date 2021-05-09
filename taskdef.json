@@ -1,11 +1,11 @@
 {
-  "family": "aws-microservice-demo",
+  "family": "insuranceapp",
   "containerDefinitions": [
     {
       "image": "%REPOSITORY_URI%:v_%BUILD_NUMBER%",
       "name": "insuranceapp",
-      "cpu": 10,
-      "memory": 256,
+      "cpu": 1,
+      "memory": 128,
       "essential": true,
       "portMappings": [
         {

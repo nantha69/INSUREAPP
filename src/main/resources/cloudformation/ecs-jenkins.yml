@@ -8,7 +8,7 @@ Parameters:
   InstanceType:
     Description: WebServer EC2 instance type
     Type: String
-    Default: t1.micro
+    Default: t3.medium
     AllowedValues:
       - t1.micro
       - t2.micro
@@ -36,6 +36,10 @@ Mappings:
     t1.micro:
       Arch: PV64
     t2.micro:
+      Arch: HVM64
+    t3.micro:
+      Arch: HVM64
+    t3.medium:
       Arch: HVM64
     t3.micro:
       Arch: HVM64
