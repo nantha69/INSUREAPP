@@ -10,7 +10,7 @@ pipeline {
   stages {
     stage('Checkout and Build') {
       steps { //Checking out the repo
-        git credentialsId: '946604fa-eead-44ba-8bcb-18da36e469d5', url: 'https://github.com/sskdesis/AWSMicroServiceDemo.git'
+        git credentialsId: '946604fa-eead-44ba-8bcb-18da36e469d5', url: 'https://github.com/symtrain-eng/symdevops.git'
         script {
           sh './gradlew clean build -x check -x test --no-daemon' //run a gradle task
         }
