@@ -4,8 +4,8 @@
     {
       "image": "%REPOSITORY_URI%:v_%BUILD_NUMBER%",
       "name": "insuranceapp",
-      "cpu": 1,
-      "memory": 128,
+      "cpu": 2,
+      "memory": 256,
       "essential": true,
       "portMappings": [
         {

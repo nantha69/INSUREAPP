@@ -19,11 +19,12 @@ Parameters:
   EcsInstanceType:
     Type: String
     Description: ECS EC2 instance type
-    Default: t2.micro
+    Default: t3.medium
     AllowedValues:
       - t1.micro
       - t2.micro
       - t3.micro
+      - t3.medium
     ConstraintDescription: must be a valid EC2 instance type.
   KeyName:
     Type: 'AWS::EC2::KeyPair::KeyName'
