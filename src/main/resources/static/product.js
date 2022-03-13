@@ -13,7 +13,7 @@ const handleLoad = async (e) => {
     const id = form.elements['id'].value
     if (id) {
         const res = await loadEntity(`/product/${id}`);
-        form.elements["message"].value = "Product loaded from database";
+        form.elements["message"].value = "Insurance products advised";
     }
     else {
       form.elements["message"].value = "Please key in the id to load";
