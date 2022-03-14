@@ -31,7 +31,7 @@ const handleCountryChange = async (e) => {
             const json = await response.json();
             console.log(json);
             showTable("productsTable",json);
-            form.elements["message"].value = "Insurance Products advised";
+            form.elements["message"].value = "Recommended Insurance Policies";
         }
         else {
             form.elements["message"].value = `Server returned error ${response.status}`;
