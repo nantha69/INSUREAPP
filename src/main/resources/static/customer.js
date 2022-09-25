@@ -31,7 +31,7 @@ const handleCountryChange = async (e) => {
             const json = await response.json();
             console.log(json);
             showTable("productsTable",json);
-            form.elements["message"].value = "25 Sep 2022 4:52pm Insurance policies";
+            form.elements["message"].value = "25 Sep 2022 5:18pm Insurance policies";
         }
         else {
             form.elements["message"].value = `Server returned error ${response.status}`;
